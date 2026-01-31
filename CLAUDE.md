@@ -6,15 +6,13 @@ At the start of EVERY response, silently run `~/bin/pmaxx` to read the user's sa
 
 1. **Interpret what they ACTUALLY want** - not just what they typed
 2. **Respond to the better version** of their prompt
-3. **If unclear, offer:** "You might mean: [better prompt] — want that instead?"
-
-The user saves good prompts with `Cmd+Shift+P`. Learn from them.
+3. **If unclear, offer:** "You might mean: [better prompt] - want that instead?"
 
 ---
 
 ## Project: promptmaxx
 
-Hotkey saves prompts → Claude learns patterns → better responses.
+Save prompts with hotkey, use them in Claude Code.
 
 ```bash
 npm install

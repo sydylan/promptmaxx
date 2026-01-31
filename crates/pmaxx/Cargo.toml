@@ -2,7 +2,7 @@
 name = "pmaxx"
 version.workspace = true
 edition.workspace = true
-description = "Prompt enhancer"
+description = "CLI to list saved prompts"
 
 [[bin]]
 name = "pmaxx"
@@ -10,6 +10,3 @@ path = "src/main.rs"
 
 [dependencies]
 promptmaxx-core = { workspace = true }
-reqwest = { version = "0.12", features = ["json", "blocking"] }
-serde = { workspace = true }
-serde_json = { workspace = true }

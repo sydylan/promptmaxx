@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "crates/promptmaxx-core",
-    "crates/promptmaxx-ollama",
     "crates/pmaxx",
     "src-tauri",
 ]
@@ -22,11 +21,9 @@ uuid = { version = "1", features = ["v4"] }
 dirs = "5"
 thiserror = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
-tokio = { version = "1", features = ["full"] }
 
 # Internal crates
 promptmaxx-core = { path = "crates/promptmaxx-core" }
-promptmaxx-ollama = { path = "crates/promptmaxx-ollama" }
 
 [profile.release]
 panic = "abort"

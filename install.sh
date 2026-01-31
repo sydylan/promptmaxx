@@ -37,8 +37,6 @@ fi
 open /Applications/promptmaxx.app
 
 echo ""
-echo "Done!"
-echo ""
-echo "Restart terminal, then:"
-echo "  • Good prompt? Cmd+Shift+P"
-echo "  • Better prompt? pmaxx <your prompt>"
+echo "Done! Restart terminal, then:"
+echo "  Cmd+Shift+P - save a good prompt"
+echo "  pmaxx       - list saved prompts"

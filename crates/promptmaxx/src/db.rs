@@ -104,6 +104,15 @@ pub fn delete(conn: &Connection, id: &str) -> Result<bool> {
     Ok(rows > 0)
 }
 
+/// Update a prompt's text by ID
+pub fn update(conn: &Connection, id: &str, text: &str) -> Result<bool> {
+    let rows = conn.execute(
+        "UPDATE prompts SET text = ?1 WHERE id = ?2",
+        params![text, id],
+    )?;
+    Ok(rows > 0)
+}
+
 /// Count prompts
 pub fn count(conn: &Connection) -> Result<i32> {
     let count: i32 = conn.query_row("SELECT COUNT(*) FROM prompts", [], |row| row.get(0))?;

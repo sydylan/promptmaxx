@@ -19,6 +19,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 dirs = { workspace = true }
 
+# macOS native window APIs
+cocoa = "0.26"
+objc = "0.2"
+
 # Internal crate
 promptmaxx = { workspace = true }
 

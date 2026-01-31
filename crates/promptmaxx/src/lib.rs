@@ -74,3 +74,9 @@ pub fn exists(text: &str) -> Result<bool> {
     let conn = get_connection()?;
     db::exists(&conn, text)
 }
+
+/// Update a prompt's text by ID.
+pub fn update(id: &str, text: &str) -> Result<bool> {
+    let conn = get_connection()?;
+    db::update(&conn, id, text)
+}

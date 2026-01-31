@@ -34,9 +34,8 @@ html, body {
   width: 100vw;
   height: 100vh;
   display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  padding: 12px;
+  justify-content: center;
+  align-items: center;
 }
 
 /* HUD Container */
@@ -168,6 +167,28 @@ html, body {
   font-size: 14px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.add-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
 .close-btn {
   background: none;
   border: none;
@@ -246,15 +267,32 @@ html, body {
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
+  outline: none;
 }
 
-.prompt-card:hover {
+.prompt-card:hover,
+.prompt-card:focus {
   background: var(--bg-hover);
   border-color: var(--accent);
 }
 
-.prompt-card:active {
+.prompt-card:focus {
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.prompt-card.selected {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.prompt-card:active,
+.prompt-card.copied {
   transform: scale(0.98);
+}
+
+.prompt-card.copied {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-dim);
 }
 
 .prompt-text {
@@ -298,13 +336,29 @@ html, body {
   transition: all 0.15s ease;
 }
 
-.prompt-card:hover .delete-btn {
+.prompt-card:hover .delete-btn,
+.prompt-card:focus .delete-btn {
   opacity: 1;
 }
 
 .delete-btn:hover {
   color: var(--error);
   background: rgba(248, 113, 113, 0.15);
+}
+
+.delete-btn.confirming {
+  opacity: 1;
+  color: #fff;
+  background: var(--error);
+  font-size: 11px;
+  padding: 3px 8px;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-2px); }
+  40%, 80% { transform: translateX(2px); }
 }
 
 /* Footer */
@@ -397,4 +451,139 @@ html, body {
 
 .prompts-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Add/Edit Form */
+.prompt-editor {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.prompt-editor textarea {
+  width: 100%;
+  min-height: 80px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+}
+
+.prompt-editor textarea:focus {
+  border-color: var(--accent);
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.editor-actions button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.save-btn {
+  background: var(--accent);
+  border: none;
+  color: #000;
+  font-weight: 500;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
+
+.cancel-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.cancel-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+/* Edit button on cards */
+.edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.15s ease;
+  margin-right: 4px;
+}
+
+.prompt-card:hover .edit-btn,
+.prompt-card:focus .edit-btn {
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Loading Skeleton */
+.loading-skeleton {
+  padding: 0;
+}
+
+.skeleton-card {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  height: 80px;
+  margin-bottom: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--error);
+}
+
+.retry-btn {
+  margin-top: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retry-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
 }

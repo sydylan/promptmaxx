@@ -13,6 +13,12 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+#[cfg(target_os = "macos")]
+use cocoa::base::id;
+#[cfg(target_os = "macos")]
+#[macro_use]
+extern crate objc;
+
 #[derive(Debug, Serialize, Clone)]
 struct SaveResult {
     success: bool,
@@ -74,6 +80,22 @@ fn get_prompt_count() -> Result<i32, String> {
     promptmaxx::count().map_err(|e| e.to_string())
 }
 
+// Update a prompt's text
+#[tauri::command]
+fn update_prompt(id: String, text: String) -> Result<bool, String> {
+    promptmaxx::update(&id, &text).map_err(|e| e.to_string())
+}
+
+// Create a new prompt manually
+#[tauri::command]
+fn create_prompt(text: String) -> Result<bool, String> {
+    match promptmaxx::save(&text) {
+        Ok(_) => Ok(true),
+        Err(promptmaxx::Error::Duplicate) => Ok(false),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 // Handle the save hotkey
 fn handle_save_hotkey(app: &AppHandle) {
     if let Some(text) = claude_history::read_last_claude_prompt() {
@@ -95,6 +117,9 @@ fn handle_save_hotkey(app: &AppHandle) {
 #[tauri::command]
 fn set_window_size(app: AppHandle, expanded: bool) {
     if let Some(window) = app.get_webview_window("main") {
+        // Save current position before resize
+        let position = window.outer_position().ok();
+
         if expanded {
             let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize {
                 width: 380.0,
@@ -105,6 +130,11 @@ fn set_window_size(app: AppHandle, expanded: bool) {
                 width: 220.0,
                 height: 70.0,
             }));
+        }
+
+        // Restore position after resize to prevent drift
+        if let Some(pos) = position {
+            let _ = window.set_position(pos);
         }
     }
 }
@@ -118,9 +148,24 @@ fn main() {
             get_prompts,
             delete_prompt,
             get_prompt_count,
-            set_window_size
+            set_window_size,
+            update_prompt,
+            create_prompt
         ])
         .setup(|app| {
+            // Configure native macOS window for proper dragging
+            #[cfg(target_os = "macos")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    if let Ok(ns_win) = window.ns_window() {
+                        let ns_window = ns_win as id;
+                        unsafe {
+                            let _: () = objc::msg_send![ns_window, setMovableByWindowBackground: true];
+                        }
+                    }
+                }
+            }
+
             // Register global hotkey: Cmd+Shift+P
             let shortcut = Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyP);
             let app_handle = app.handle().clone();

@@ -29,10 +29,16 @@ const statusDot = document.getElementById("status-dot")!;
 const statusText = document.getElementById("status")!;
 const saveToast = document.getElementById("save-toast")!;
 const hotkeyDisplay = document.getElementById("hotkey-display")!;
+const addBtn = document.getElementById("add-btn")!;
 
 let prompts: Prompt[] = [];
 let isExpanded = false;
 let registeredHotkey = "Cmd+Shift+P";
+let selectedIndex = -1;
+let deleteConfirmId: string | null = null;
+let deleteConfirmTimeout: number | null = null;
+let editingId: string | null = null;
+let isAddingNew = false;
 
 // Toggle HUD expansion
 async function toggleHud(expand?: boolean) {
@@ -54,13 +60,38 @@ async function toggleHud(expand?: boolean) {
 
 // Load prompts from backend
 async function loadPrompts(query?: string) {
+  renderLoading();
+
   try {
     prompts = await invoke<Prompt[]>("get_prompts", { query: query || null });
+    selectedIndex = -1;
     renderPrompts();
     updatePromptCount();
   } catch (e) {
     console.error("Failed to load prompts:", e);
+    renderError();
   }
+}
+
+// Render loading skeleton
+function renderLoading() {
+  promptsList.innerHTML = `
+    <div class="loading-skeleton">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+  `;
+}
+
+// Render error state
+function renderError() {
+  promptsList.innerHTML = `
+    <div class="error-state">
+      <p>Failed to load prompts</p>
+      <button class="retry-btn" onclick="location.reload()">Retry</button>
+    </div>
+  `;
 }
 
 // Update prompt count
@@ -86,8 +117,13 @@ function renderPrompts() {
   } else {
     promptsList.innerHTML = prompts
       .map(
-        (p) => `
-      <div class="prompt-card" data-id="${p.id}">
+        (p, index) => `
+      <div class="prompt-card${index === selectedIndex ? " selected" : ""}"
+           data-id="${p.id}"
+           data-index="${index}"
+           tabindex="0"
+           role="button"
+           aria-label="Prompt: ${escapeHtml(p.text.slice(0, 50))}">
         <div class="prompt-text">${escapeHtml(p.text)}</div>
         <div class="prompt-footer">
           <div class="prompt-meta">
@@ -95,7 +131,11 @@ function renderPrompts() {
             ${p.branch ? `<span class="branch">${escapeHtml(p.branch)}</span>` : ""}
             <span class="time">${formatTime(p.timestamp)}</span>
           </div>
-          <button class="delete-btn" data-id="${p.id}" title="Delete">&times;</button>
+          <button class="edit-btn" data-id="${p.id}" title="Edit" aria-label="Edit prompt">✎</button>
+          <button class="delete-btn${deleteConfirmId === p.id ? " confirming" : ""}"
+                  data-id="${p.id}"
+                  title="${deleteConfirmId === p.id ? "Click again to confirm" : "Delete"}"
+                  aria-label="Delete prompt">${deleteConfirmId === p.id ? "delete?" : "×"}</button>
         </div>
       </div>
     `
@@ -105,29 +145,92 @@ function renderPrompts() {
     // Add click handlers for copy
     promptsList.querySelectorAll(".prompt-card").forEach((card) => {
       card.addEventListener("click", async (e) => {
-        // Don't copy if clicking delete button
-        if ((e.target as HTMLElement).classList.contains("delete-btn")) return;
+        // Don't copy if clicking edit or delete button
+        const target = e.target as HTMLElement;
+        if (target.classList.contains("delete-btn") || target.classList.contains("edit-btn")) return;
 
         const id = card.getAttribute("data-id");
         const prompt = prompts.find((p) => p.id === id);
         if (prompt) {
           await copyToClipboard(prompt.text);
+          card.classList.add("copied");
           showToast("Copied to clipboard", prompt.text.slice(0, 40), "success");
+          setTimeout(() => card.classList.remove("copied"), 300);
+        }
+      });
+
+      // Keyboard handler for cards
+      card.addEventListener("keydown", async (e) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === "Enter" || ke.key === " ") {
+          ke.preventDefault();
+          const id = card.getAttribute("data-id");
+          const prompt = prompts.find((p) => p.id === id);
+          if (prompt) {
+            await copyToClipboard(prompt.text);
+            card.classList.add("copied");
+            showToast("Copied to clipboard", prompt.text.slice(0, 40), "success");
+            setTimeout(() => card.classList.remove("copied"), 300);
+          }
+        } else if (ke.key === "Delete" || ke.key === "Backspace") {
+          ke.preventDefault();
+          const id = card.getAttribute("data-id");
+          if (id) {
+            handleDeleteClick(id);
+          }
         }
       });
     });
 
-    // Add click handlers for delete
-    promptsList.querySelectorAll(".delete-btn").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
+    // Add click handlers for edit
+    promptsList.querySelectorAll(".edit-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const id = btn.getAttribute("data-id");
         if (id) {
-          await deletePrompt(id);
+          startEdit(id);
+        }
+      });
+    });
+
+    // Add click handlers for delete with confirmation
+    promptsList.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-id");
+        if (id) {
+          handleDeleteClick(id);
         }
       });
     });
   }
+}
+
+// Handle delete with confirmation
+function handleDeleteClick(id: string) {
+  if (deleteConfirmId === id) {
+    // Second click - actually delete
+    clearDeleteConfirm();
+    deletePrompt(id);
+  } else {
+    // First click - enter confirmation mode
+    clearDeleteConfirm();
+    deleteConfirmId = id;
+    renderPrompts();
+    deleteConfirmTimeout = window.setTimeout(() => {
+      clearDeleteConfirm();
+      renderPrompts();
+    }, 2000);
+  }
+}
+
+// Clear delete confirmation state
+function clearDeleteConfirm() {
+  if (deleteConfirmTimeout) {
+    clearTimeout(deleteConfirmTimeout);
+    deleteConfirmTimeout = null;
+  }
+  deleteConfirmId = null;
 }
 
 // Delete a prompt
@@ -215,6 +318,95 @@ function setStatus(status: "ready" | "saving" | "error", message?: string) {
   statusText.textContent = message || status;
 }
 
+// Show add/edit form
+function showEditor(existingText = "", promptId: string | null = null) {
+  editingId = promptId;
+  isAddingNew = !promptId;
+
+  const editorHtml = `
+    <div class="prompt-editor" id="prompt-editor">
+      <textarea id="editor-textarea" placeholder="Enter your prompt...">${escapeHtml(existingText)}</textarea>
+      <div class="editor-actions">
+        <button class="cancel-btn" id="editor-cancel">Cancel</button>
+        <button class="save-btn" id="editor-save">${promptId ? "Update" : "Add"}</button>
+      </div>
+    </div>
+  `;
+
+  // Insert at top of prompts list
+  promptsList.insertAdjacentHTML("afterbegin", editorHtml);
+
+  const textarea = document.getElementById("editor-textarea") as HTMLTextAreaElement;
+  const cancelBtn = document.getElementById("editor-cancel")!;
+  const saveBtn = document.getElementById("editor-save")!;
+
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+  cancelBtn.addEventListener("click", hideEditor);
+
+  saveBtn.addEventListener("click", async () => {
+    const text = textarea.value.trim();
+    if (!text) {
+      showToast("Prompt cannot be empty", "", "error");
+      return;
+    }
+
+    try {
+      if (editingId) {
+        // Update existing
+        const updated = await invoke<boolean>("update_prompt", { id: editingId, text });
+        if (updated) {
+          showToast("Updated", text.slice(0, 40), "success");
+        }
+      } else {
+        // Create new
+        const created = await invoke<boolean>("create_prompt", { text });
+        if (created) {
+          showToast("Added", text.slice(0, 40), "success");
+        } else {
+          showToast("Already exists", text.slice(0, 40), "duplicate");
+        }
+      }
+      hideEditor();
+      loadPrompts(searchInput.value);
+    } catch (e) {
+      console.error("Failed to save:", e);
+      showToast("Save failed", "", "error");
+    }
+  });
+
+  // Ctrl/Cmd+Enter to save
+  textarea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      saveBtn.click();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      hideEditor();
+    }
+  });
+}
+
+// Hide editor
+function hideEditor() {
+  const editor = document.getElementById("prompt-editor");
+  if (editor) {
+    editor.remove();
+  }
+  editingId = null;
+  isAddingNew = false;
+}
+
+// Start editing a prompt
+function startEdit(promptId: string) {
+  const prompt = prompts.find((p) => p.id === promptId);
+  if (prompt) {
+    hideEditor();
+    showEditor(prompt.text, promptId);
+  }
+}
+
 // Window dragging
 const appWindow = getCurrentWindow();
 
@@ -252,6 +444,14 @@ closeBtn.addEventListener("click", (e) => {
   toggleHud(false);
 });
 
+// Add button
+addBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!isAddingNew) {
+    showEditor();
+  }
+});
+
 // Debounced search
 let searchTimeout: number;
 searchInput.addEventListener("input", () => {
@@ -265,8 +465,33 @@ searchInput.addEventListener("input", () => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && isExpanded) {
     toggleHud(false);
+    return;
+  }
+
+  // Arrow key navigation when expanded
+  if (isExpanded && prompts.length > 0) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selectedIndex = Math.min(selectedIndex + 1, prompts.length - 1);
+      focusSelectedCard();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selectedIndex = Math.max(selectedIndex - 1, 0);
+      focusSelectedCard();
+    }
   }
 });
+
+// Focus the selected card
+function focusSelectedCard() {
+  const cards = promptsList.querySelectorAll(".prompt-card");
+  cards.forEach((card, i) => {
+    card.classList.toggle("selected", i === selectedIndex);
+  });
+  if (selectedIndex >= 0 && cards[selectedIndex]) {
+    (cards[selectedIndex] as HTMLElement).focus();
+  }
+}
 
 // Listen for Tauri events
 listen<SaveResult>("prompt-saved", (event) => {

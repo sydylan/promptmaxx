@@ -1,21 +1,18 @@
-use chrono::Utc;
 use rusqlite::{params, Connection};
-use uuid::Uuid;
 
-use crate::error::{CoreError, Result};
+use crate::error::{Error, Result};
 use crate::models::Prompt;
 
 /// Get the data directory (~/.promptmaxx)
-pub fn get_data_dir() -> Result<std::path::PathBuf> {
-    let mut path = dirs::home_dir().ok_or(CoreError::HomeDirNotFound)?;
+fn get_data_dir() -> Result<std::path::PathBuf> {
+    let mut path = dirs::home_dir().ok_or(Error::HomeDirNotFound)?;
     path.push(".promptmaxx");
-    std::fs::create_dir_all(&path)
-        .map_err(|e| CoreError::DataDir(format!("Could not create data directory: {}", e)))?;
+    std::fs::create_dir_all(&path)?;
     Ok(path)
 }
 
-/// Initialize the database and return a connection
-pub fn init_db() -> Result<Connection> {
+/// Get a database connection (initializes if needed)
+pub fn get_connection() -> Result<Connection> {
     let mut db_path = get_data_dir()?;
     db_path.push("prompts.db");
 
@@ -41,21 +38,19 @@ pub fn init_db() -> Result<Connection> {
     Ok(conn)
 }
 
-/// Check if a prompt already exists
-pub fn prompt_exists(db: &Connection, text: &str) -> bool {
-    let count: i32 = db
-        .query_row(
-            "SELECT COUNT(*) FROM prompts WHERE text = ?1",
-            params![text],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-    count > 0
+/// Check if a prompt exists
+pub fn exists(conn: &Connection, text: &str) -> Result<bool> {
+    let count: i32 = conn.query_row(
+        "SELECT COUNT(*) FROM prompts WHERE text = ?1",
+        params![text],
+        |row| row.get(0),
+    )?;
+    Ok(count > 0)
 }
 
-/// Save a new prompt
-pub fn save_prompt(db: &Connection, prompt: &Prompt) -> Result<()> {
-    db.execute(
+/// Insert a prompt
+pub fn insert(conn: &Connection, prompt: &Prompt) -> Result<()> {
+    conn.execute(
         "INSERT INTO prompts (id, text, repo, branch, timestamp) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             prompt.id,
@@ -68,19 +63,8 @@ pub fn save_prompt(db: &Connection, prompt: &Prompt) -> Result<()> {
     Ok(())
 }
 
-/// Create a new prompt with auto-generated id and timestamp
-pub fn create_prompt(text: String, repo: Option<String>, branch: Option<String>) -> Prompt {
-    Prompt {
-        id: Uuid::new_v4().to_string(),
-        text,
-        repo,
-        branch,
-        timestamp: Utc::now().to_rfc3339(),
-    }
-}
-
-/// Get prompts with optional search filter
-pub fn get_prompts(db: &Connection, query: Option<&str>) -> Result<Vec<Prompt>> {
+/// List prompts with optional search
+pub fn list(conn: &Connection, query: Option<&str>) -> Result<Vec<Prompt>> {
     let mut prompts = Vec::new();
 
     let search_term = query
@@ -93,7 +77,7 @@ pub fn get_prompts(db: &Connection, query: Option<&str>) -> Result<Vec<Prompt>> 
         "SELECT id, text, repo, branch, timestamp FROM prompts ORDER BY timestamp DESC LIMIT 100"
     };
 
-    let mut stmt = db.prepare(sql)?;
+    let mut stmt = conn.prepare(sql)?;
 
     let mut rows = if let Some(ref term) = search_term {
         stmt.query(params![term])?
@@ -115,13 +99,13 @@ pub fn get_prompts(db: &Connection, query: Option<&str>) -> Result<Vec<Prompt>> 
 }
 
 /// Delete a prompt by ID
-pub fn delete_prompt(db: &Connection, id: &str) -> Result<bool> {
-    let rows_affected = db.execute("DELETE FROM prompts WHERE id = ?1", params![id])?;
-    Ok(rows_affected > 0)
+pub fn delete(conn: &Connection, id: &str) -> Result<bool> {
+    let rows = conn.execute("DELETE FROM prompts WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
 }
 
-/// Get total prompt count
-pub fn get_prompt_count(db: &Connection) -> Result<i32> {
-    let count: i32 = db.query_row("SELECT COUNT(*) FROM prompts", [], |row| row.get(0))?;
+/// Count prompts
+pub fn count(conn: &Connection) -> Result<i32> {
+    let count: i32 = conn.query_row("SELECT COUNT(*) FROM prompts", [], |row| row.get(0))?;
     Ok(count)
 }

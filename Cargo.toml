@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/promptmaxx-core",
+    "crates/promptmaxx",
     "crates/pmaxx",
     "src-tauri",
 ]
@@ -23,7 +23,7 @@ thiserror = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Internal crates
-promptmaxx-core = { path = "crates/promptmaxx-core" }
+promptmaxx = { path = "crates/promptmaxx" }
 
 [profile.release]
 panic = "abort"

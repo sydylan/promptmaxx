@@ -2565,7 +2565,7 @@ dependencies = [
 name = "pmaxx"
 version = "0.2.0"
 dependencies = [
- "promptmaxx-core",
+ "promptmaxx",
 ]
 
 [[package]]
@@ -2697,8 +2697,19 @@ name = "promptmaxx"
 version = "0.2.0"
 dependencies = [
  "chrono",
- "promptmaxx-core",
+ "dirs 5.0.1",
  "rusqlite",
+ "serde",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "promptmaxx-app"
+version = "0.2.0"
+dependencies = [
+ "dirs 5.0.1",
+ "promptmaxx",
  "serde",
  "serde_json",
  "tauri",
@@ -2706,20 +2717,6 @@ dependencies = [
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-shell",
- "uuid",
-]
-
-[[package]]
-name = "promptmaxx-core"
-version = "0.2.0"
-dependencies = [
- "chrono",
- "dirs 5.0.1",
- "rusqlite",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "uuid",
 ]
 
 [[package]]

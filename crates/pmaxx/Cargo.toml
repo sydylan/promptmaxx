@@ -9,4 +9,4 @@ name = "pmaxx"
 path = "src/main.rs"
 
 [dependencies]
-promptmaxx-core = { workspace = true }
+promptmaxx = { workspace = true }

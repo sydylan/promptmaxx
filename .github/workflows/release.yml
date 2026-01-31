@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build CLI
+        run: cargo build -p pmaxx --release
+
+      - name: Build App
+        run: npm run tauri build
+
+      - name: Zip binaries
+        run: |
+          cd target/release
+          zip pmaxx-mac.zip pmaxx
+          cd bundle/macos
+          zip -r promptmaxx-app-mac.zip promptmaxx.app
+
+      - name: Upload CLI
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: target/release/pmaxx-mac.zip
+          asset_name: pmaxx-mac.zip
+          asset_content_type: application/zip
+
+      - name: Upload App
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: target/release/bundle/macos/promptmaxx-app-mac.zip
+          asset_name: promptmaxx-app-mac.zip
+          asset_content_type: application/zip

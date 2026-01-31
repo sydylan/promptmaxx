@@ -21,7 +21,7 @@ if [ -d "$HOME/.pmaxx-src" ]; then
     cd "$HOME/.pmaxx-src"
     git pull
 else
-    git clone --depth 1 https://github.com/sydylan/promptmaxx.git "$HOME/.pmaxx-src"
+    git clone --depth 1 -b dylan https://github.com/sydylan/promptmaxx.git "$HOME/.pmaxx-src"
     cd "$HOME/.pmaxx-src"
 fi
 

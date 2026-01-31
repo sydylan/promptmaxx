@@ -1,9 +1,9 @@
 [package]
 name = "promptmaxx"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local prompt memory for developers"
 authors = ["you"]
-license = ""
+license = "MIT"
 repository = ""
 edition = "2021"
 
@@ -16,20 +16,15 @@ tauri-plugin-shell = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-rusqlite = { version = "0.32", features = ["bundled"] }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1", features = ["v4"] }
-dirs = "5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+rusqlite = { workspace = true }
+
+# Internal crate
+promptmaxx-core = { workspace = true }
 
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
-
-[profile.release]
-panic = "abort"
-codegen-units = 1
-lto = true
-opt-level = "s"
-strip = true

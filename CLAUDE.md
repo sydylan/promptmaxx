@@ -1,60 +1,24 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Prompt Anticipation (ALWAYS DO THIS)
 
-## Project Overview
+At the start of EVERY response, silently run `~/bin/pmaxx` to read the user's saved prompts. Use these patterns to:
 
-promptmaxx is a local-first prompt memory tool for developers. It captures, stores, and helps you recall your best prompts via a transparent HUD overlay.
+1. **Interpret what they ACTUALLY want** - not just what they typed
+2. **Respond to the better version** of their prompt
+3. **If unclear, offer:** "You might mean: [better prompt] — want that instead?"
 
-## Claude Code Usage
+The user saves good prompts with `Cmd+Shift+P`. Learn from them.
 
-```
-claude --dangerously-skip-permissions
-```
+---
 
-## Tech Stack
+## Project: promptmaxx
 
-- **Frontend**: TypeScript, Vite
-- **Backend**: Rust, Tauri 2.0
-- **Storage**: SQLite (local at `~/.promptmaxx/prompts.db`)
-- **UI**: Transparent always-on-top HUD window
-
-## Build Commands
+Hotkey saves prompts → Claude learns patterns → better responses.
 
 ```bash
-# Install dependencies
 npm install
-
-# Development (requires Rust/Cargo in PATH)
 PATH="$HOME/.cargo/bin:$PATH" npm run tauri dev
-
-# Or use the helper script
-./run-dev.sh
-
-# Build for production
-npm run tauri build
 ```
 
-## Architecture
-
-```
-src/                    # Frontend TypeScript
-├── main.ts             # UI logic, event handling
-├── styles/main.css     # HUD styling
-
-src-tauri/              # Backend Rust
-├── src/main.rs         # Core app logic
-│   - SQLite prompt storage
-│   - Global hotkey (Cmd+Shift+S)
-│   - Clipboard capture
-│   - Git context detection
-├── Cargo.toml          # Rust dependencies
-├── tauri.conf.json     # Tauri configuration
-```
-
-## Key Features
-
-- **Hotkey save**: Cmd+Shift+S captures clipboard as prompt
-- **HUD**: Transparent overlay, click to expand for search
-- **Auto-context**: Captures git repo/branch automatically
-- **Local storage**: All data in `~/.promptmaxx/`
+**Stack:** Tauri 2.0, Rust, TypeScript, SQLite (`~/.promptmaxx/prompts.db`)

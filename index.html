@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>promptmaxx</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud" class="hud collapsed">
+        <div class="hud-idle" id="hud-idle" data-tauri-drag-region>
+          <div class="status-dot ready" id="status-dot"></div>
+          <div class="status-text" data-tauri-drag-region>
+            <span class="brand" data-tauri-drag-region>promptmaxx</span>
+            <span class="status-row" data-tauri-drag-region>
+              <span class="status" id="status" data-tauri-drag-region>ready</span>
+              <span class="hotkey" id="hotkey-display" data-tauri-drag-region>Cmd+Shift+P</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="hud-expanded" id="hud-expanded">
+          <div class="hud-header" data-tauri-drag-region>
+            <span class="brand" data-tauri-drag-region>promptmaxx</span>
+            <button class="close-btn" id="close-btn">&times;</button>
+          </div>
+
+          <div class="search-container">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search your prompts..."
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="prompts-list" id="prompts-list">
+            <div class="empty-state">
+              <p>No prompts saved yet.</p>
+              <p class="hint">Press <kbd>Cmd+Shift+P</kbd> to save a prompt.</p>
+            </div>
+          </div>
+
+          <div class="hud-footer">
+            <span id="prompt-count">0 prompts saved</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-toast" id="save-toast">
+        <span class="toast-icon success">✓</span>
+        <div class="toast-content">
+          <span class="toast-text">saved</span>
+          <span class="toast-preview"></span>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
